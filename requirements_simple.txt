@@ -1,0 +1,19 @@
+# PXT Web App - Simplified Python Dependencies
+# Compatible with Python 3.14 - Workshop Demo Version
+
+# Web Framework
+Flask==3.0.0
+
+# Web Utilities
+Werkzeug==3.0.1
+
+# For CSV handling without pandas compilation issues
+# We'll use Python's built-in csv module for now
+# and add pandas back later when compatibility improves
+
+# Optional: If you want to try pandas with latest version
+# pandas>=2.1.0
+
+# Alternative lightweight data handling (if needed)
+# openpyxl==3.1.2          # Excel support
+# python-dateutil==2.8.2   # Date parsing

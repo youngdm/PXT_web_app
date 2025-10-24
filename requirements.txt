@@ -1,0 +1,26 @@
+# PXT Web App - Python Dependencies
+# Workshop Demonstration Version Requirements
+# Compatible with Python 3.12 - Tested Working Versions
+
+# Web Framework
+Flask==2.3.0
+
+# Data Processing and CSV Handling
+numpy==2.3.4
+pandas==2.3.3
+
+# Web Utilities (included with Flask but specified for clarity)
+Werkzeug==2.3.0
+
+# Additional utilities that may be helpful
+# (uncomment as needed during development)
+
+# openpyxl>=3.1.0          # Excel file support (for future enhancement)
+# requests>=2.31.0         # HTTP requests (for URL-based data sources)
+# python-dateutil>=2.8.2   # Enhanced date parsing
+# jsonschema>=4.17.0       # JSON validation (for PXT tag schemas)
+
+# Development and Testing (optional)
+# pytest>=7.4.0           # Testing framework
+# black>=23.7.0           # Code formatting
+# flake8>=6.0.0           # Code linting
