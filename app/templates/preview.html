@@ -326,9 +326,9 @@
         <a href="{{ url_for('index') }}" class="btn btn-secondary">
           ← Upload Different File
         </a>
-        <button class="btn btn-primary" onclick="showComingSoon()">
+        <a href="{{ url_for('tag_data') }}" class="btn btn-primary">
           Apply PXT Tags →
-        </button>
+        </a>
       </div>
 
       <!-- Footer -->
@@ -339,12 +339,6 @@
     </div>
 
     <script>
-      function showComingSoon() {
-        alert(
-          "PXT Tag Application Interface - Coming in Week 2 of development!\n\nThis demo shows successful data upload and preview. The tagging interface will be built next.",
-        );
-      }
-
       // Add some visual feedback for long column names
       document.querySelectorAll(".data-table td").forEach(function (cell) {
         if (cell.scrollWidth > cell.clientWidth) {

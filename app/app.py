@@ -8,11 +8,21 @@ PXT tag mapping functionality.
 Workshop Demo Version - Week 1: Basic file upload and processing
 """
 
-from flask import Flask, request, render_template, redirect, url_for, flash, send_file
+from flask import (
+    Flask,
+    request,
+    render_template,
+    redirect,
+    url_for,
+    flash,
+    send_file,
+    session,
+)
 import pandas as pd
 import os
 from werkzeug.utils import secure_filename
 import tempfile
+from pxt_tags import get_all_tags, suggest_tag_for_column, validate_required_fields
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -99,8 +109,12 @@ def upload_file():
                 "sample_data": df.head(3).to_dict("records") if len(df) > 0 else [],
             }
 
-            # For now, just show the data preview
-            # In Week 2, this will redirect to the PXT tagging interface
+            # Store data in session for tagging interface
+            session["dataset_info"] = dataset_info
+            session["csv_data"] = df.to_dict(
+                "records"
+            )  # Store actual data for export later
+
             flash(
                 f"Successfully uploaded {filename} with {len(df)} rows and {len(df.columns)} columns.",
                 "success",
@@ -126,6 +140,83 @@ def upload_file():
     else:
         flash("Invalid file type. Please upload a CSV file (.csv extension).", "error")
         return redirect(url_for("index"))
+
+
+@app.route("/tag", methods=["GET", "POST"])
+def tag_data():
+    """
+    Handle PXT tagging interface.
+
+    GET: Display tagging interface with auto-suggestions
+    POST: Process tag mappings and proceed to validation/export
+    """
+    if "dataset_info" not in session:
+        flash("No data found. Please upload a CSV file first.", "error")
+        return redirect(url_for("index"))
+
+    dataset_info = session["dataset_info"]
+
+    if request.method == "GET":
+        # Get all available PXT tags
+        all_tags = get_all_tags()
+
+        # Generate auto-suggestions for each column
+        suggestions = {}
+        for column in dataset_info["columns"]:
+            suggested_tag = suggest_tag_for_column(column)
+            if suggested_tag:
+                suggestions[column] = suggested_tag
+
+        return render_template(
+            "tagging.html",
+            data=dataset_info,
+            pxt_tags=all_tags,
+            suggestions=suggestions,
+        )
+
+    elif request.method == "POST":
+        # Process form submission with tag mappings
+        column_mappings = {}
+
+        for column in dataset_info["columns"]:
+            selected_tag = request.form.get(f"tag_{column}")
+            if selected_tag and selected_tag != "":
+                column_mappings[column] = selected_tag
+
+        # Store mappings in session
+        session["column_mappings"] = column_mappings
+
+        # Validate required fields
+        validation_results = validate_required_fields(column_mappings)
+        session["validation_results"] = validation_results
+
+        flash(
+            f"Tag mappings saved! {len(column_mappings)} columns mapped to PXT tags.",
+            "success",
+        )
+        return redirect(url_for("validate_export"))
+
+
+@app.route("/validate")
+def validate_export():
+    """
+    Display validation results and export options.
+    """
+    if "dataset_info" not in session or "column_mappings" not in session:
+        flash("Please complete the tagging process first.", "error")
+        return redirect(url_for("index"))
+
+    dataset_info = session["dataset_info"]
+    column_mappings = session["column_mappings"]
+    validation_results = session.get("validation_results", {})
+
+    return render_template(
+        "validate.html",
+        data=dataset_info,
+        mappings=column_mappings,
+        validation=validation_results,
+        pxt_tags=get_all_tags(),
+    )
 
 
 @app.route("/about")

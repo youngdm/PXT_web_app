@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Apply PXT Tags - PXT Web App</title>
+    <style>
+      /* Consistent styling with existing templates */
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 0;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin-top: 20px;
+        border-radius: 8px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #2c5530;
+      }
+
+      .header h1 {
+        color: #2c5530;
+        margin: 0;
+        font-size: 2.2em;
+      }
+
+      .header .subtitle {
+        color: #666;
+        font-size: 1.1em;
+        margin-top: 5px;
+      }
+
+      .progress-bar {
+        background-color: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 20px 0;
+        height: 8px;
+      }
+
+      .progress-fill {
+        background-color: #2c5530;
+        height: 100%;
+        transition: width 0.3s ease;
+      }
+
+      .file-info {
+        background-color: #e8f4ea;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #2c5530;
+      }
+
+      .file-info h2 {
+        color: #2c5530;
+        margin-top: 0;
+      }
+
+      .info-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+      }
+
+      .info-item {
+        background-color: white;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+        border: 1px solid #ddd;
+      }
+
+      .info-item .number {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #2c5530;
+      }
+
+      .info-item .label {
+        color: #666;
+        font-size: 0.9em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .tagging-section {
+        margin: 30px 0;
+      }
+
+      .tagging-section h3 {
+        color: #2c5530;
+        border-bottom: 2px solid #e8f4ea;
+        padding-bottom: 5px;
+        margin-bottom: 20px;
+      }
+
+      .column-mapping {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fafafa;
+      }
+
+      .column-mapping.suggested {
+        background-color: #f0fff0;
+        border-color: #90ee90;
+      }
+
+      .column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .column-name {
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 1.1em;
+        color: #2c5530;
+      }
+
+      .suggestion-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        font-weight: 500;
+      }
+
+      .tag-selector {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .tag-dropdown {
+        flex: 1;
+        min-width: 300px;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 1em;
+        background-color: white;
+      }
+
+      .tag-dropdown.suggested {
+        background-color: #f0fff0;
+        border-color: #90ee90;
+      }
+
+      .clear-button {
+        padding: 6px 12px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 0.9em;
+      }
+
+      .clear-button:hover {
+        background-color: #545b62;
+      }
+
+      .tag-info {
+        margin-top: 10px;
+        padding: 8px 12px;
+        background-color: white;
+        border-radius: 4px;
+        border-left: 3px solid #17a2b8;
+        font-size: 0.9em;
+        display: none;
+      }
+
+      .tag-info.visible {
+        display: block;
+      }
+
+      .tag-priority {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        font-weight: 500;
+        margin-right: 8px;
+      }
+
+      .priority-required {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .priority-desirable {
+        background-color: #ffc107;
+        color: black;
+      }
+
+      .priority-optional {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .sample-data {
+        margin-top: 8px;
+        font-size: 0.85em;
+        color: #666;
+        font-style: italic;
+      }
+
+      .actions {
+        text-align: center;
+        margin: 40px 0;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 12px 24px;
+        margin: 0 10px;
+        border: none;
+        border-radius: 4px;
+        font-size: 1.1em;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .btn-primary {
+        background-color: #2c5530;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: #1a3320;
+      }
+
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: #545b62;
+      }
+
+      .flash-messages {
+        margin: 20px 0;
+      }
+
+      .flash-message {
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin: 10px 0;
+      }
+
+      .flash-message.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .flash-message.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .help-section {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 20px 0;
+      }
+
+      .help-section h4 {
+        color: #856404;
+        margin-top: 0;
+      }
+
+      .help-section ul {
+        color: #856404;
+        margin: 0;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      /* Responsive design */
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          padding: 15px;
+        }
+
+        .tag-selector {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .tag-dropdown {
+          min-width: unset;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <h1>Apply PXT Tags</h1>
+        <div class="subtitle">
+          Map your CSV columns to standardized Peatland eXchange Tags
+        </div>
+      </div>
+
+      <!-- Flash Messages -->
+      <div class="flash-messages">
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %} {% for category, message in messages %}
+        <div class="flash-message {{ category }}">{{ message }}</div>
+        {% endfor %} {% endif %} {% endwith %}
+      </div>
+
+      <!-- File Information Summary -->
+      <div class="file-info">
+        <h2>📊 Dataset Overview</h2>
+        <div class="info-summary">
+          <div class="info-item">
+            <div class="number">{{ data.column_count }}</div>
+            <div class="label">Columns to Map</div>
+          </div>
+          <div class="info-item">
+            <div class="number">{{ suggestions|length }}</div>
+            <div class="label">Auto-Suggested</div>
+          </div>
+          <div class="info-item">
+            <div class="number">{{ pxt_tags|length }}</div>
+            <div class="label">Available PXT Tags</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Help Section -->
+      <div class="help-section">
+        <h4>🎯 How to Apply PXT Tags</h4>
+        <ul>
+          <li><strong>Auto-suggestions:</strong> Green columns have suggested PXT tags based on column names</li>
+          <li><strong>Required fields:</strong> Red priority tags must be mapped for complete metadata</li>
+          <li><strong>Select tags:</strong> Use dropdowns to choose the most appropriate PXT tag for each column</li>
+          <li><strong>Skip columns:</strong> Leave dropdown empty for columns that don't need PXT tags</li>
+          <li><strong>Get help:</strong> Click on any dropdown to see tag details and examples</li>
+        </ul>
+      </div>
+
+      <!-- Tagging Interface -->
+      <form method="POST" action="{{ url_for('tag_data') }}">
+        <div class="tagging-section">
+          <h3>🏷️ Column to PXT Tag Mapping</h3>
+
+          {% for column in data.columns %}
+          <div class="column-mapping {% if column in suggestions %}suggested{% endif %}">
+            <div class="column-header">
+              <span class="column-name">{{ column }}</span>
+              {% if column in suggestions %}
+              <span class="suggestion-badge">✨ Auto-suggested</span>
+              {% endif %}
+            </div>
+
+            <div class="tag-selector">
+              <select
+                name="tag_{{ column }}"
+                class="tag-dropdown {% if column in suggestions %}suggested{% endif %}"
+                onchange="showTagInfo(this)"
+                data-column="{{ column }}"
+              >
+                <option value="">-- Select PXT Tag --</option>
+                {% for tag in pxt_tags %}
+                <option
+                  value="{{ tag.tag }}"
+                  data-priority="{{ tag.priority }}"
+                  data-example="{{ tag.example }}"
+                  data-notes="{{ tag.notes }}"
+                  data-level="{{ tag.level }}"
+                  {% if column in suggestions and suggestions[column] == tag.tag %}selected{% endif %}
+                >
+                  {{ tag.tag }} - {{ tag.field }}
+                  {% if tag.priority == 'required' %}(Required){% endif %}
+                  {% if tag.priority == 'desirable' %}(Recommended){% endif %}
+                </option>
+                {% endfor %}
+              </select>
+
+              <button
+                type="button"
+                class="clear-button"
+                onclick="clearTagSelection('{{ column }}')"
+              >
+                Clear
+              </button>
+            </div>
+
+            <!-- Sample Data Preview -->
+            {% if data.sample_data %}
+            <div class="sample-data">
+              <strong>Sample values:</strong>
+              {% for row in data.sample_data[:2] %}
+                "{{ row[column] if row[column] is not none else '' }}"{% if not loop.last %}, {% endif %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Tag Information (initially hidden) -->
+            <div class="tag-info" id="info_{{ loop.index0 }}">
+              <div class="tag-details">
+                <!-- Will be populated by JavaScript -->
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="actions">
+          <a href="{{ url_for('index') }}" class="btn btn-secondary">
+            ← Upload Different File
+          </a>
+          <button type="submit" class="btn btn-primary">
+            Continue to Validation →
+          </button>
+        </div>
+      </form>
+
+      <!-- Footer -->
+      <div class="footer">
+        <p>PXT Web App - Workshop Demonstration Version</p>
+        <p>Week 2: Column-to-tag mapping with auto-suggestions</p>
+      </div>
+    </div>
+
+    <script>
+      function showTagInfo(selectElement) {
+        const selectedOption = selectElement.options[selectElement.selectedIndex];
+        const column = selectElement.dataset.column;
+        const columnIndex = Array.from(document.querySelectorAll('[data-column]')).indexOf(selectElement);
+        const infoDiv = document.getElementById(`info_${columnIndex}`);
+        const detailsDiv = infoDiv.querySelector('.tag-details');
+
+        if (selectedOption.value === '') {
+          infoDiv.classList.remove('visible');
+          return;
+        }
+
+        const priority = selectedOption.dataset.priority;
+        const example = selectedOption.dataset.example;
+        const notes = selectedOption.dataset.notes;
+        const level = selectedOption.dataset.level;
+
+        let priorityClass = '';
+        let priorityText = '';
+
+        if (priority === 'required') {
+          priorityClass = 'priority-required';
+          priorityText = 'REQUIRED';
+        } else if (priority === 'desirable') {
+          priorityClass = 'priority-desirable';
+          priorityText = 'RECOMMENDED';
+        } else {
+          priorityClass = 'priority-optional';
+          priorityText = 'OPTIONAL';
+        }
+
+        detailsDiv.innerHTML = `
+          <div>
+            <span class="tag-priority ${priorityClass}">${priorityText}</span>
+            <strong>${selectedOption.value}</strong> (${level} level)
+          </div>
+          <div style="margin-top: 8px;">
+            <strong>Example:</strong> ${example}
+          </div>
+          <div style="margin-top: 5px;">
+            <strong>Notes:</strong> ${notes}
+          </div>
+        `;
+
+        infoDiv.classList.add('visible');
+      }
+
+      function clearTagSelection(column) {
+        const selectElement = document.querySelector(`select[name="tag_${column}"]`);
+        const columnIndex = Array.from(document.querySelectorAll('[data-column]')).indexOf(selectElement);
+        const infoDiv = document.getElementById(`info_${columnIndex}`);
+
+        selectElement.selectedIndex = 0;
+        selectElement.classList.remove('suggested');
+        infoDiv.classList.remove('visible');
+
+        // Remove suggestion styling from parent container
+        const parentMapping = selectElement.closest('.column-mapping');
+        parentMapping.classList.remove('suggested');
+
+        // Remove suggestion badge
+        const badge = parentMapping.querySelector('.suggestion-badge');
+        if (badge) {
+          badge.style.display = 'none';
+        }
+      }
+
+      // Initialize tag info for pre-selected suggestions
+      document.addEventListener('DOMContentLoaded', function() {
+        const allSelects = document.querySelectorAll('.tag-dropdown');
+        allSelects.forEach(select => {
+          if (select.value !== '') {
+            showTagInfo(select);
+          }
+        });
+      });
+
+      // Add some interactive feedback
+      document.querySelectorAll('.tag-dropdown').forEach(select => {
+        select.addEventListener('change', function() {
+          if (this.value !== '') {
+            this.style.borderColor = '#28a745';
+          } else {
+            this.style.borderColor = '#ddd';
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
