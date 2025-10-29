@@ -1,0 +1,18 @@
+ * Serving Flask app 'app'
+ * Debug mode: on
+[31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[33mPress CTRL+C to quit[0m
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 111-009-322
+127.0.0.1 - - [29/Oct/2025 13:54:33] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [29/Oct/2025 13:54:38] "GET / HTTP/1.1" 200 -
+ * Detected change in '/Users/dylanyoung/Git_home/PXT_web_app/app/app.py', reloading
+ * Restarting with stat
+ * Debugger is active!
+ * Debugger PIN: 111-009-322
+127.0.0.1 - - [29/Oct/2025 14:01:26] "GET / HTTP/1.1" 200 -
+127.0.0.1 - - [29/Oct/2025 14:01:45] "GET / HTTP/1.1" 200 -
+/opt/homebrew/Cellar/python@3.14/3.14.0/Frameworks/Python.framework/Versions/3.14/lib/python3.14/multiprocessing/resource_tracker.py:297: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown: {'/mp-d5ynx16f'}
+  warnings.warn(
