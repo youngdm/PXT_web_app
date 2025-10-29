@@ -22,7 +22,12 @@ import pandas as pd
 import os
 from werkzeug.utils import secure_filename
 import tempfile
-from pxt_tags import get_all_tags, suggest_tag_for_column, validate_required_fields
+from pxt_tags import (
+    get_all_tags,
+    suggest_tag_for_column,
+    validate_column_mappings,
+    get_tag_info,
+)
 
 # Initialize Flask application
 app = Flask(__name__)
@@ -180,14 +185,14 @@ def tag_data():
 
         for column in dataset_info["columns"]:
             selected_tag = request.form.get(f"tag_{column}")
-            if selected_tag and selected_tag != "":
-                column_mappings[column] = selected_tag
+            # Include ALL columns, with empty string for untagged ones
+            column_mappings[column] = selected_tag if selected_tag else ""
 
         # Store mappings in session
         session["column_mappings"] = column_mappings
 
-        # Validate required fields
-        validation_results = validate_required_fields(column_mappings)
+        # Validate column mappings against dataset
+        validation_results = validate_column_mappings(column_mappings)
         session["validation_results"] = validation_results
 
         flash(
@@ -210,13 +215,105 @@ def validate_export():
     column_mappings = session["column_mappings"]
     validation_results = session.get("validation_results", {})
 
+    # Create enhanced mappings with tag information
+    enhanced_mappings = {}
+    for column, tag in column_mappings.items():
+        if tag and tag.strip():
+            tag_info = get_tag_info(tag)
+            enhanced_mappings[column] = {
+                "tag": tag,
+                "priority": tag_info.get("priority", "unknown"),
+                "level": tag_info.get("level", "unknown"),
+            }
+        else:
+            enhanced_mappings[column] = {"tag": "", "priority": "", "level": ""}
+
     return render_template(
         "validate.html",
         data=dataset_info,
         mappings=column_mappings,
+        enhanced_mappings=enhanced_mappings,
         validation=validation_results,
         pxt_tags=get_all_tags(),
     )
+
+
+@app.route("/export")
+def export_csv():
+    """
+    Export CSV file with embedded PXT tags as column headers.
+
+    Creates a new CSV file where original column names are replaced with
+    their corresponding PXT tags, preserving all original data.
+    """
+    if (
+        "dataset_info" not in session
+        or "column_mappings" not in session
+        or "csv_data" not in session
+    ):
+        flash(
+            "No data available for export. Please complete the upload and tagging process first.",
+            "error",
+        )
+        return redirect(url_for("index"))
+
+    try:
+        # Get data from session
+        dataset_info = session["dataset_info"]
+        column_mappings = session["column_mappings"]
+        csv_data = session["csv_data"]
+
+        # Get original column order from dataset_info
+        original_columns = dataset_info["columns"]
+
+        # Create DataFrame from stored data with explicit column order
+        df = pd.DataFrame(csv_data, columns=original_columns)
+
+        # Create PXT tags row (preserving original column order)
+        pxt_tags_row = []
+        for original_column in original_columns:
+            if original_column in column_mappings and column_mappings[original_column]:
+                # Use PXT tag for this column
+                pxt_tag = column_mappings[original_column]
+                pxt_tags_row.append(pxt_tag)
+            else:
+                # Empty string for untagged columns
+                pxt_tags_row.append("")
+
+        # Insert PXT tags as the first data row (keeping original headers)
+        df.loc[-1] = pxt_tags_row  # Insert at index -1
+        df.index = df.index + 1  # Shift index
+        df.sort_index(inplace=True)  # Sort by index to put -1 row at top
+
+        # Generate export filename
+        original_name = dataset_info["filename"].rsplit(".", 1)[0]  # Remove extension
+        export_filename = f"{original_name}_PXT_tagged.csv"
+
+        # Create temporary file for download
+        import tempfile
+
+        temp_file = tempfile.NamedTemporaryFile(
+            mode="w", delete=False, suffix=".csv", newline=""
+        )
+        df.to_csv(temp_file.name, index=False)
+        temp_file.close()
+
+        # Log successful export
+        flash(
+            f"CSV exported successfully with {len(column_mappings)} PXT tags applied!",
+            "success",
+        )
+
+        return send_file(
+            temp_file.name,
+            as_attachment=True,
+            download_name=export_filename,
+            mimetype="text/csv",
+        )
+
+    except Exception as e:
+        flash(f"Error exporting CSV: {str(e)}. Please try again.", "error")
+        return redirect(url_for("validate_export"))
 
 
 @app.route("/about")
@@ -251,4 +348,51 @@ def internal_error(e):
 if __name__ == "__main__":
     # Run the application in debug mode for development
     # Note: Set debug=False for production deployment
-    app.run(debug=True, host="127.0.0.1", port=5000)
+
+    import socket
+    import os
+
+    def is_port_available(port):
+        """Check if a port is available for use."""
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind(("127.0.0.1", port))
+                return True
+        except socket.error:
+            return False
+
+    # Check if we're running in Flask's reloader process
+    # The reloader restarts the app, so we need to skip port checking
+    if os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        # This is the reloader process - Flask already chose the port
+        # Just run without port checking
+        app.run(
+            debug=True, host="127.0.0.1", port=int(os.environ.get("FLASK_PORT", 5001))
+        )
+    else:
+        # This is the main process - do port selection
+        primary_port = 5000
+        fallback_port = 5001  # Unassigned port, safe to use
+
+        if is_port_available(primary_port):
+            port = primary_port
+            print(f"🚀 Starting PXT Web App on http://127.0.0.1:{port}")
+        elif is_port_available(fallback_port):
+            port = fallback_port
+            print(
+                f"⚠️  Port {primary_port} is busy, using fallback port {fallback_port}"
+            )
+            print(f"🚀 Starting PXT Web App on http://127.0.0.1:{port}")
+        else:
+            print(f"❌ Both ports {primary_port} and {fallback_port} are unavailable.")
+            print("   Please stop other applications using these ports and try again.")
+            exit(1)
+
+        try:
+            # Set environment variable so reloader knows which port to use
+            os.environ["FLASK_PORT"] = str(port)
+            app.run(debug=True, host="127.0.0.1", port=port)
+        except Exception as e:
+            print(f"❌ Failed to start Flask app: {str(e)}")
+            print("   Please check that no other applications are using the port.")
+            exit(1)

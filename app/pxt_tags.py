@@ -374,7 +374,6 @@ AUTO_SUGGESTION_PATTERNS = {
     "#pxt_site_id": [
         "site_id",
         "siteid",
-        "site",
         "site_code",
         "site_name",
         "location_id",
@@ -408,6 +407,7 @@ AUTO_SUGGESTION_PATTERNS = {
     ],
     "#pxt_event_date": [
         "date",
+        "study_date",
         "date_sampled",
         "sample_date",
         "event_date",
@@ -433,7 +433,6 @@ AUTO_SUGGESTION_PATTERNS = {
     ],
     # Medium confidence matches (75-85% accuracy)
     "#pxt_site_type": [
-        "type",
         "peatland_type",
         "habitat_type",
         "site_type",
@@ -443,7 +442,6 @@ AUTO_SUGGESTION_PATTERNS = {
         "vegetation",
         "dominant_vegetation",
         "plant_species",
-        "species",
         "flora",
     ],
     "#pxt_event_id": [
@@ -469,10 +467,8 @@ AUTO_SUGGESTION_PATTERNS = {
         "classification",
     ],
     "#pxt_equipment": ["equipment", "instrument", "gear", "tools", "apparatus"],
-    # Common measurement fields that might relate to various tags
-    "ph": ["ph", "ph_level", "acidity", "ph_measurement"],
-    "depth": ["depth", "peat_depth", "water_depth", "core_depth"],
-    "water_table": ["water_table", "water_level", "groundwater_level", "wt_depth"],
+    # Note: pH, conductivity, depth, water_table, species_count have no direct PXT equivalents
+    # These are measurement data that would be stored as dataset columns, not metadata tags
 }
 
 
@@ -517,7 +513,8 @@ def get_tags_by_priority():
 
 def suggest_tag_for_column(column_name):
     """
-    Suggest a PXT tag for a given column name using fuzzy matching.
+    Suggest a PXT tag for a given column name using more selective matching.
+    Only suggests tags when there's a high confidence match.
 
     Args:
         column_name (str): Name of the CSV column
@@ -527,15 +524,18 @@ def suggest_tag_for_column(column_name):
     """
     column_lower = column_name.lower().strip()
 
-    # Direct matches first
+    # Direct matches first (exact match with patterns)
     for tag, patterns in AUTO_SUGGESTION_PATTERNS.items():
         if column_lower in [p.lower() for p in patterns]:
             return tag
 
-    # Fuzzy matching - check if column contains pattern
+    # Liberal fuzzy matching - suggest when there's a reasonable match
     for tag, patterns in AUTO_SUGGESTION_PATTERNS.items():
         for pattern in patterns:
-            if pattern.lower() in column_lower or column_lower in pattern.lower():
+            # Bidirectional matching - if pattern contains column or column contains pattern
+            if (
+                pattern.lower() in column_lower or column_lower in pattern.lower()
+            ) and len(pattern) >= 3:
                 return tag
 
     return None
@@ -556,25 +556,103 @@ def get_required_tags():
     return required
 
 
-def validate_required_fields(column_mappings):
+def get_tag_priority(tag):
     """
-    Check which required fields are missing from column mappings.
+    Get the priority level of a specific PXT tag.
+
+    Args:
+        tag (str): PXT tag name
+
+    Returns:
+        str: Priority level ('required', 'desirable', 'optional') or None if not found
+    """
+    for level in PXT_TAGS:
+        for priority in PXT_TAGS[level]:
+            for tag_info in PXT_TAGS[level][priority]:
+                if tag_info["tag"] == tag:
+                    return priority
+    return None
+
+
+def get_tag_info(tag):
+    """
+    Get complete information for a specific PXT tag.
+
+    Args:
+        tag (str): PXT tag name
+
+    Returns:
+        dict: Tag information with priority and level, or empty dict if not found
+    """
+    for level_name, level_data in PXT_TAGS.items():
+        for priority_name, priority_tags in level_data.items():
+            for tag_info in priority_tags:
+                if tag_info["tag"] == tag:
+                    return {
+                        "tag": tag,
+                        "priority": priority_name,
+                        "level": level_name,
+                        "field": tag_info.get("field", ""),
+                        "example": tag_info.get("example", ""),
+                        "notes": tag_info.get("notes", ""),
+                    }
+    return {}
+
+
+def validate_column_mappings(column_mappings):
+    """
+    Validate column mappings against the uploaded dataset.
+    Reports on tagged vs untagged columns and categorizes tagged columns by priority.
 
     Args:
         column_mappings (dict): Dictionary of column_name -> pxt_tag
 
     Returns:
-        dict: Validation results with missing/present required fields
+        dict: Validation results based on the uploaded dataset
     """
-    required_tags = get_required_tags()
-    mapped_tags = list(column_mappings.values())
+    total_columns = len(column_mappings)
 
-    missing_required = [tag for tag in required_tags if tag not in mapped_tags]
-    present_required = [tag for tag in required_tags if tag in mapped_tags]
+    # Get valid mapped tags (non-empty)
+    valid_mapped_tags = []
+    for column, tag in column_mappings.items():
+        if tag and tag.strip():
+            valid_mapped_tags.append(tag)
+
+    mapped_columns = len(valid_mapped_tags)
+    untagged_columns = total_columns - mapped_columns
+
+    # Categorize tagged columns by priority
+    required_found = []
+    desirable_found = []
+    optional_found = []
+
+    for tag in valid_mapped_tags:
+        priority = get_tag_priority(tag)
+        if priority == "required":
+            required_found.append(tag)
+        elif priority == "desirable":
+            desirable_found.append(tag)
+        elif priority == "optional":
+            optional_found.append(tag)
 
     return {
-        "missing_required": missing_required,
-        "present_required": present_required,
-        "total_required": len(required_tags),
-        "completion_percentage": (len(present_required) / len(required_tags)) * 100,
+        # Overall dataset mapping
+        "total_columns": total_columns,
+        "mapped_columns": mapped_columns,
+        "untagged_columns": untagged_columns,
+        "mapping_percentage": (mapped_columns / total_columns) * 100
+        if total_columns
+        else 0,
+        # Tag categories found in this dataset
+        "required_found": required_found,
+        "required_count": len(required_found),
+        "desirable_found": desirable_found,
+        "desirable_count": len(desirable_found),
+        "optional_found": optional_found,
+        "optional_count": len(optional_found),
+        # For backward compatibility with existing templates
+        "present_required": required_found,
+        "present_desirable": desirable_found,
+        "missing_required": [],  # Not applicable in dataset-contextual approach
+        "missing_desirable": [],  # Not applicable in dataset-contextual approach
     }

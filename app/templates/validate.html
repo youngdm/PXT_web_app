@@ -377,31 +377,49 @@
       <div class="validation-summary">
         <h2>📊 Validation Summary</h2>
         <div class="summary-grid">
-          <div class="summary-item success">
-            <div class="number">{{ mappings|length }}</div>
-            <div class="label">Columns Mapped</div>
+          <div
+            class="summary-item {% if validation.mapped_columns == validation.total_columns %}success{% elif validation.mapped_columns > validation.total_columns * 0.5 %}warning{% else %}danger{% endif %}"
+          >
+            <div class="number">
+              {{ validation.mapped_columns }} of {{ validation.total_columns }}
+            </div>
+            <div class="label">Columns Tagged</div>
           </div>
-          <div class="summary-item {% if validation.present_required|length == validation.total_required %}success{% elif validation.present_required|length > 0 %}warning{% else %}danger{% endif %}">
-            <div class="number">{{ validation.present_required|length }}/{{ validation.total_required }}</div>
-            <div class="label">Required Fields</div>
+          <div
+            class="summary-item {% if validation.required_count > 0 %}success{% else %}warning{% endif %}"
+          >
+            <div class="number">{{ validation.required_count }}</div>
+            <div class="label">Required Found</div>
           </div>
-          <div class="summary-item">
-            <div class="number">{{ validation.completion_percentage|round|int }}%</div>
-            <div class="label">Completion</div>
+          <div
+            class="summary-item {% if validation.desirable_count > 0 %}success{% else %}warning{% endif %}"
+          >
+            <div class="number">{{ validation.desirable_count }}</div>
+            <div class="label">Desirable Found</div>
+          </div>
+          <div
+            class="summary-item {% if validation.optional_count > 0 %}success{% else %}secondary{% endif %}"
+          >
+            <div class="number">{{ validation.optional_count }}</div>
+            <div class="label">Optional Found</div>
           </div>
         </div>
 
         <!-- Progress Bar -->
         <div class="progress-section">
-          <h4>Required Fields Completion</h4>
+          <h4>Column Mapping Progress</h4>
           <div class="progress-bar">
             <div
-              class="progress-fill {% if validation.completion_percentage >= 80 %}excellent{% elif validation.completion_percentage >= 50 %}good{% else %}needs-work{% endif %}"
-              style="width: {{ validation.completion_percentage }}%"
+              class="progress-fill {% if validation.mapping_percentage >= 80 %}excellent{% elif validation.mapping_percentage >= 50 %}good{% else %}needs-work{% endif %}"
+              style="width: {{ validation.mapping_percentage }}%"
             >
-              {{ validation.completion_percentage|round|int }}%
+              {{ validation.mapping_percentage|round|int }}%
             </div>
           </div>
+          <p>
+            {{ validation.mapped_columns }} of {{ validation.total_columns }}
+            columns have been tagged with PXT metadata.
+          </p>
         </div>
       </div>
 
@@ -409,31 +427,66 @@
       <div class="validation-details">
         <h3>🔍 Validation Details</h3>
 
-        <!-- Present Required Fields -->
-        {% if validation.present_required %}
+        <!-- Required Fields Found -->
+        {% if validation.required_found %}
         <div class="validation-card success">
-          <h4>✅ Required Fields Present ({{ validation.present_required|length }})</h4>
-          <p>These essential PXT tags have been successfully mapped:</p>
+          <h4>✅ Required Fields Found ({{ validation.required_count }})</h4>
+          <p>These essential PXT tags have been suggested for your dataset:</p>
           <div class="tag-list">
-            {% for tag in validation.present_required %}
+            {% for tag in validation.required_found %}
             <span class="tag-item">{{ tag }}</span>
             {% endfor %}
           </div>
         </div>
         {% endif %}
 
-        <!-- Missing Required Fields -->
-        {% if validation.missing_required %}
-        <div class="validation-card danger">
-          <h4>❌ Missing Required Fields ({{ validation.missing_required|length }})</h4>
-          <p>These essential PXT tags are missing and should be mapped for complete metadata:</p>
+        <!-- Desirable Fields Found -->
+        {% if validation.desirable_found %}
+        <div class="validation-card success">
+          <h4>✅ Desirable Fields Found ({{ validation.desirable_count }})</h4>
+          <p>
+            These recommended PXT tags have been suggested for your dataset:
+          </p>
           <div class="tag-list">
-            {% for tag in validation.missing_required %}
+            {% for tag in validation.desirable_found %}
             <span class="tag-item">{{ tag }}</span>
             {% endfor %}
           </div>
         </div>
         {% endif %}
+
+        <!-- Optional Fields Found -->
+        {% if validation.optional_found %}
+        <div class="validation-card success">
+          <h4>✅ Optional Fields Found ({{ validation.optional_count }})</h4>
+          <p>These optional PXT tags have been suggested for your dataset:</p>
+          <div class="tag-list">
+            {% for tag in validation.optional_found %}
+            <span class="tag-item">{{ tag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+
+        <!-- Untagged Columns -->
+        {% if validation.untagged_columns > 0 %}
+        <div class="validation-card warning">
+          <h4>📊 Untagged Columns ({{ validation.untagged_columns }})</h4>
+          <p>
+            These columns don't have suggested PXT tags. This may be because
+            they contain measurement data or there are no appropriate PXT
+            metadata tags available. You can review and manually assign tags if
+            needed.
+          </p>
+        </div>
+        {% endif %}
+
+        <!-- Note about suggestions -->
+        <div class="note">
+          <strong>Note:</strong> The suggested tags are automatically generated
+          and should be reviewed. You can modify any tag assignments before
+          export to ensure accuracy.
+        </div>
 
         <!-- All Mappings Table -->
         <div class="mappings-section">
@@ -450,20 +503,34 @@
                 </tr>
               </thead>
               <tbody>
-                {% for column, tag in mappings.items() %}
-                {% set tag_info = {} %}
-                {% for pxt_tag in pxt_tags if pxt_tag.tag == tag %}
-                  {% set tag_info = pxt_tag %}
-                {% endfor %}
+                {% for column in data.columns %} {% set mapping_info =
+                enhanced_mappings[column] %}
                 <tr>
                   <td><code>{{ column }}</code></td>
-                  <td><code>{{ tag }}</code></td>
                   <td>
-                    <span class="tag-priority priority-{{ tag_info.priority or 'unknown' }}">
-                      {{ (tag_info.priority or 'unknown').upper() }}
-                    </span>
+                    {% if mapping_info.tag %}
+                    <code>{{ mapping_info.tag }}</code>
+                    {% else %}
+                    <em style="color: #999">No tag assigned</em>
+                    {% endif %}
                   </td>
-                  <td>{{ (tag_info.level or 'unknown').title() }}</td>
+                  <td>
+                    {% if mapping_info.tag %}
+                    <span
+                      class="tag-priority priority-{{ mapping_info.priority }}"
+                    >
+                      {{ mapping_info.priority.upper() }}
+                    </span>
+                    {% else %}
+                    <span style="color: #999">-</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if mapping_info.tag %} {{ mapping_info.level.title() }}
+                    {% else %}
+                    <span style="color: #999">-</span>
+                    {% endif %}
+                  </td>
                 </tr>
                 {% endfor %}
               </tbody>
@@ -478,8 +545,10 @@
       <!-- Export Options -->
       {% if mappings %}
       <div class="note">
-        <strong>Ready for Export:</strong> Your data has been successfully processed and is ready for download with embedded PXT tags.
-        The exported CSV will include your original data with PXT tags added as column headers.
+        <strong>Ready for Export:</strong> Your data has been successfully
+        processed and is ready for download with embedded PXT tags. The exported
+        CSV will include your original data with PXT tags added as column
+        headers.
       </div>
       {% endif %}
 
@@ -490,9 +559,9 @@
         </a>
 
         {% if mappings %}
-        <button class="btn btn-success" onclick="exportData()">
+        <a href="{{ url_for('export_csv') }}" class="btn btn-success">
           📥 Download Tagged CSV
-        </button>
+        </a>
         {% endif %}
 
         <a href="{{ url_for('index') }}" class="btn btn-secondary">
@@ -503,31 +572,32 @@
       <!-- Footer -->
       <div class="footer">
         <p>PXT Web App - Workshop Demonstration Version</p>
-        <p>Week 2: Validation and export preparation complete</p>
+        <p>Week 3: Complete workflow with CSV export functionality</p>
       </div>
     </div>
 
     <script>
-      function exportData() {
-        // For Week 2 demo - show coming soon message
-        // In Week 3, this will trigger actual CSV export
-        alert(
-          "CSV Export with PXT Tags - Coming in Week 3!\n\n" +
-          "Your tag mappings have been validated and are ready for export. " +
-          "The export functionality will be implemented in the next development phase."
-        );
-      }
-
       // Add visual feedback for completion status
       document.addEventListener('DOMContentLoaded', function() {
-        const completionPercentage = {{ validation.completion_percentage|round|int }};
+        const mappingPercentage = {{ validation.mapping_percentage|round|int }};
+        const requiredCount = {{ validation.required_count }};
+        const desirableCount = {{ validation.desirable_count }};
+        const optionalCount = {{ validation.optional_count }};
+        const untaggedColumns = {{ validation.untagged_columns }};
 
-        if (completionPercentage === 100) {
-          console.log('🎉 All required fields mapped! Ready for export.');
-        } else if (completionPercentage >= 50) {
-          console.log('⚠️ Some required fields missing, but good progress made.');
+        console.log(`📊 Dataset Validation Summary:`);
+        console.log(`   ${mappingPercentage}% of columns tagged`);
+        console.log(`   ${requiredCount} required tags found`);
+        console.log(`   ${desirableCount} desirable tags found`);
+        console.log(`   ${optionalCount} optional tags found`);
+        console.log(`   ${untaggedColumns} columns untagged`);
+
+        if (mappingPercentage >= 80) {
+          console.log('🎉 Excellent tag coverage! Ready for export.');
+        } else if (mappingPercentage >= 50) {
+          console.log('👍 Good tag coverage. Review suggestions before export.');
         } else {
-          console.log('❌ Many required fields missing. Consider adding more mappings.');
+          console.log('⚠️ Limited tag coverage. Consider reviewing untagged columns.');
         }
       });
     </script>
