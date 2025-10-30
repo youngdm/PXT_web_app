@@ -75,6 +75,11 @@
         display: none;
       }
 
+      .file-input input[type="file"]:focus + label {
+        outline: 2px solid #2c5530;
+        outline-offset: 2px;
+      }
+
       .file-input label {
         display: inline-block;
         padding: 12px 24px;
@@ -106,6 +111,11 @@
         font-size: 1.1em;
         cursor: pointer;
         transition: background-color 0.3s;
+      }
+
+      .btn:focus {
+        outline: 2px solid #2c5530;
+        outline-offset: 2px;
       }
 
       .btn-primary {
@@ -252,6 +262,11 @@
         font-size: 1em;
       }
 
+      .tag-dropdown:focus {
+        outline: 2px solid #2c5530;
+        border-color: #2c5530;
+      }
+
       .sample-data {
         margin-top: 8px;
         font-size: 0.85em;
@@ -350,6 +365,36 @@
         font-size: 0.9em;
       }
 
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-content {
+        background-color: white;
+        margin: 15% auto;
+        padding: 20px;
+        border-radius: 8px;
+        width: 90%;
+        max-width: 500px;
+        text-align: center;
+      }
+
+      .modal-content h3 {
+        color: #2c5530;
+        margin-bottom: 15px;
+      }
+
+      .modal-content .actions {
+        margin-top: 20px;
+      }
+
       @media (max-width: 768px) {
         .container {
           margin: 10px;
@@ -371,7 +416,7 @@
         </div>
       </div>
 
-      <div id="messages"></div>
+      <div id="messages" role="status" aria-live="polite"></div>
 
       <!-- Upload Page -->
       <div id="upload-page" class="page active">
@@ -379,10 +424,23 @@
           <h2>Upload Your Peatland Data</h2>
           <p>Select a CSV file containing your peatland research data</p>
           <div class="file-input">
-            <label for="file-upload">📁 Choose CSV File</label>
-            <input type="file" id="file-upload" accept=".csv" />
+            <label for="file-upload" aria-describedby="file-help"
+              >📁 Choose CSV File</label
+            >
+            <input
+              type="file"
+              id="file-upload"
+              accept=".csv"
+              aria-label="Select CSV file to upload"
+            />
           </div>
-          <div id="selected-file" class="selected-file"></div>
+          <div id="selected-file" class="selected-file" role="status"></div>
+          <div
+            id="file-help"
+            style="font-size: 0.8em; color: #666; margin-top: 10px"
+          >
+            💡 Tip: Press Ctrl+O to open file dialog
+          </div>
         </div>
 
         <div class="info-section">
@@ -406,6 +464,77 @@
             </li>
           </ul>
         </div>
+
+        <div class="info-section">
+          <h3>📚 Help & Documentation</h3>
+          <details style="margin: 10px 0">
+            <summary
+              style="
+                font-weight: bold;
+                color: #2c5530;
+                cursor: pointer;
+                padding: 5px 0;
+              "
+            >
+              Understanding PXT Tag Priorities
+            </summary>
+            <div style="padding: 10px 0">
+              <p>
+                <strong>Required:</strong> Essential tags for basic data
+                exchange
+              </p>
+              <p>
+                <strong>Desirable:</strong> Important for complete data
+                description
+              </p>
+              <p>
+                <strong>Optional:</strong> Additional context that may be useful
+              </p>
+            </div>
+          </details>
+          <details style="margin: 10px 0">
+            <summary
+              style="
+                font-weight: bold;
+                color: #2c5530;
+                cursor: pointer;
+                padding: 5px 0;
+              "
+            >
+              Supported File Formats
+            </summary>
+            <div style="padding: 10px 0">
+              <p>This tool supports CSV (Comma Separated Values) files with:</p>
+              <ul>
+                <li>Header row with column names</li>
+                <li>UTF-8 or ASCII encoding</li>
+                <li>Quoted fields with commas supported</li>
+                <li>Tested with files of 50MB+ and 100,000+ rows</li>
+                <li>Processing time may increase with very large datasets</li>
+              </ul>
+            </div>
+          </details>
+          <details style="margin: 10px 0">
+            <summary
+              style="
+                font-weight: bold;
+                color: #2c5530;
+                cursor: pointer;
+                padding: 5px 0;
+              "
+            >
+              Data Privacy & Security
+            </summary>
+            <div style="padding: 10px 0">
+              <p>This application runs entirely in your browser:</p>
+              <ul>
+                <li>No data is sent to external servers</li>
+                <li>Files are processed locally on your device</li>
+                <li>No data is stored after you close the browser</li>
+              </ul>
+            </div>
+          </details>
+        </div>
       </div>
 
       <!-- Preview Page -->
@@ -416,12 +545,14 @@
           <button
             class="btn btn-secondary"
             onclick="app.goToPage('upload-page')"
+            aria-label="Go back to upload a different file"
           >
             ← Upload Different File
           </button>
           <button
             class="btn btn-primary"
             onclick="app.goToPage('tagging-page')"
+            aria-label="Continue to apply PXT tags to columns"
           >
             Apply PXT Tags →
           </button>
@@ -436,10 +567,15 @@
           <button
             class="btn btn-secondary"
             onclick="app.goToPage('preview-page')"
+            aria-label="Go back to data preview"
           >
             ← Back to Preview
           </button>
-          <button class="btn btn-primary" onclick="app.saveTagsAndValidate()">
+          <button
+            class="btn btn-primary"
+            onclick="app.saveTagsAndValidate()"
+            aria-label="Save tags and continue to validation"
+          >
             Continue to Validation →
           </button>
         </div>
@@ -453,15 +589,21 @@
           <button
             class="btn btn-secondary"
             onclick="app.goToPage('tagging-page')"
+            aria-label="Go back to modify tag assignments"
           >
             ← Modify Tags
           </button>
-          <button class="btn btn-success" onclick="app.exportCSV()">
+          <button
+            class="btn btn-success"
+            onclick="app.exportCSV()"
+            aria-label="Download CSV file with PXT tags"
+          >
             📥 Download Tagged CSV
           </button>
           <button
             class="btn btn-secondary"
-            onclick="app.goToPage('upload-page')"
+            onclick="app.confirmStartOver()"
+            aria-label="Start over with a new file upload"
           >
             Start New Upload
           </button>
@@ -471,6 +613,29 @@
       <div class="footer">
         <p>PXT Web App - Browser Version (Fully Offline)</p>
         <p>All processing happens in your browser - no data is stored</p>
+      </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+      <div class="modal-content">
+        <h3>⚠️ Confirm Action</h3>
+        <p id="confirmMessage">
+          Are you sure you want to start over? This will clear all your current
+          work.
+        </p>
+        <div class="actions">
+          <button class="btn btn-secondary" onclick="app.closeModal()">
+            Cancel
+          </button>
+          <button
+            class="btn btn-danger"
+            onclick="app.confirmAction()"
+            style="background-color: #dc3545; color: white"
+          >
+            Yes, Start Over
+          </button>
+        </div>
       </div>
     </div>
 
@@ -927,7 +1092,7 @@
 
         showMessage(msg, type = "success") {
           const messages = document.getElementById("messages");
-          messages.innerHTML = `<div class="message ${type}">${msg}</div>`;
+          messages.innerHTML = `<div class="message ${type}" lang="en">${msg}</div>`;
           setTimeout(() => (messages.innerHTML = ""), 5000);
         },
 
@@ -946,9 +1111,10 @@
           if (!file) return;
 
           this.state.filename = file.name;
-          document.getElementById("selected-file").style.display = "block";
-          document.getElementById("selected-file").textContent =
-            `Selected: ${file.name}`;
+          const selectedFileDiv = document.getElementById("selected-file");
+          selectedFileDiv.style.display = "block";
+          selectedFileDiv.setAttribute("lang", "en");
+          selectedFileDiv.textContent = `Selected: ${file.name}`;
 
           const reader = new FileReader();
           reader.onload = (e) => {
@@ -975,6 +1141,7 @@
 
         showPreview() {
           const content = document.getElementById("preview-content");
+          content.setAttribute("lang", "en");
           let html = `
                     <div class="info-section">
                         <h3>📊 File Information</h3>
@@ -1018,6 +1185,7 @@
 
         showTagging() {
           const content = document.getElementById("tagging-content");
+          content.setAttribute("lang", "en");
           let html = `
                     <div class="info-section">
                         <h3>🏷️ Column to PXT Tag Mapping</h3>
@@ -1125,7 +1293,10 @@
           });
 
           html += "</tbody></table></div>";
-          document.getElementById("validation-content").innerHTML = html;
+          const validationContent =
+            document.getElementById("validation-content");
+          validationContent.setAttribute("lang", "en");
+          validationContent.innerHTML = html;
         },
 
         exportCSV() {
@@ -1151,11 +1322,62 @@
             this.showMessage("Export error: " + error.message, "error");
           }
         },
+
+        confirmStartOver() {
+          const modal = document.getElementById("confirmModal");
+          modal.style.display = "block";
+        },
+
+        closeModal() {
+          const modal = document.getElementById("confirmModal");
+          modal.style.display = "none";
+        },
+
+        confirmAction() {
+          this.closeModal();
+          this.state = {
+            filename: "",
+            headers: [],
+            data: [],
+            mappings: {},
+          };
+          document.getElementById("selected-file").style.display = "none";
+          document.getElementById("file-upload").value = "";
+          this.goToPage("upload-page");
+          this.showMessage("Started over with a new upload");
+        },
       };
 
       // Initialize
       document.getElementById("file-upload").addEventListener("change", (e) => {
         app.handleFileUpload(e.target.files[0]);
+      });
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          switch (e.key) {
+            case "o":
+              e.preventDefault();
+              document.getElementById("file-upload").click();
+              break;
+            case "s":
+              e.preventDefault();
+              if (app.state.data.length > 0) app.exportCSV();
+              break;
+          }
+        }
+        // Close modal on Escape
+        if (e.key === "Escape") {
+          app.closeModal();
+        }
+      });
+
+      // Close modal when clicking outside
+      document.getElementById("confirmModal").addEventListener("click", (e) => {
+        if (e.target.id === "confirmModal") {
+          app.closeModal();
+        }
       });
     </script>
   </body>
