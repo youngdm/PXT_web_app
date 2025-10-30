@@ -1,0 +1,1162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PXT Web App - Peatland eXchange Tags</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: white;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #2c5530;
+      }
+
+      .header h1 {
+        color: #2c5530;
+        font-size: 2.2em;
+      }
+
+      .header .subtitle {
+        color: #666;
+        font-size: 1.1em;
+        margin-top: 5px;
+      }
+
+      .page {
+        display: none;
+      }
+
+      .page.active {
+        display: block;
+      }
+
+      .upload-section {
+        background-color: #f9f9f9;
+        padding: 30px;
+        border-radius: 8px;
+        border: 2px dashed #2c5530;
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      .upload-section h2 {
+        color: #2c5530;
+        margin-bottom: 15px;
+      }
+
+      .file-input {
+        margin: 20px 0;
+      }
+
+      .file-input input[type="file"] {
+        display: none;
+      }
+
+      .file-input label {
+        display: inline-block;
+        padding: 12px 24px;
+        background-color: #2c5530;
+        color: white;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1.1em;
+        transition: background-color 0.3s;
+      }
+
+      .file-input label:hover {
+        background-color: #1a3320;
+      }
+
+      .selected-file {
+        margin: 15px 0;
+        padding: 10px;
+        background-color: #e8f4ea;
+        border-radius: 4px;
+        display: none;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        margin: 10px 5px;
+        border: none;
+        border-radius: 4px;
+        font-size: 1.1em;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .btn-primary {
+        background-color: #2c5530;
+        color: white;
+      }
+
+      .btn-primary:hover {
+        background-color: #1a3320;
+      }
+
+      .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .btn-secondary:hover {
+        background-color: #545b62;
+      }
+
+      .btn-success {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .btn-success:hover {
+        background-color: #1e7e34;
+      }
+
+      .info-section {
+        background-color: #e8f4ea;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #2c5530;
+      }
+
+      .info-section h3 {
+        color: #2c5530;
+        margin-top: 0;
+      }
+
+      .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+        margin: 15px 0;
+      }
+
+      .info-item {
+        background-color: white;
+        padding: 15px;
+        border-radius: 4px;
+        text-align: center;
+        border: 1px solid #ddd;
+      }
+
+      .info-item .number {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #2c5530;
+      }
+
+      .info-item .label {
+        color: #666;
+        font-size: 0.9em;
+        margin-top: 5px;
+      }
+
+      .data-table {
+        width: 100%;
+        overflow-x: auto;
+        margin: 15px 0;
+      }
+
+      .data-table table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9em;
+      }
+
+      .data-table th {
+        background-color: #2c5530;
+        color: white;
+        padding: 12px 8px;
+        text-align: left;
+        position: sticky;
+        top: 0;
+      }
+
+      .data-table td {
+        padding: 10px 8px;
+        border-bottom: 1px solid #eee;
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .data-table tr:nth-child(even) {
+        background-color: #f8f9fa;
+      }
+
+      .column-mapping {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fafafa;
+      }
+
+      .column-mapping.suggested {
+        background-color: #f0fff0;
+        border-color: #90ee90;
+      }
+
+      .column-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .column-name {
+        font-weight: bold;
+        font-family: monospace;
+        font-size: 1.1em;
+        color: #2c5530;
+      }
+
+      .suggestion-badge {
+        background-color: #28a745;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+      }
+
+      .tag-dropdown {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        margin: 10px 0;
+        font-size: 1em;
+      }
+
+      .sample-data {
+        margin-top: 8px;
+        font-size: 0.85em;
+        color: #666;
+        font-style: italic;
+      }
+
+      .tag-priority {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        margin-left: 5px;
+      }
+
+      .priority-required {
+        background-color: #dc3545;
+        color: white;
+      }
+
+      .priority-desirable {
+        background-color: #ffc107;
+        color: black;
+      }
+
+      .priority-optional {
+        background-color: #6c757d;
+        color: white;
+      }
+
+      .message {
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin: 10px 0;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      .message.success {
+        background-color: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .message.error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .actions {
+        text-align: center;
+        margin: 40px 0;
+      }
+
+      .footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        color: #666;
+        font-size: 0.9em;
+      }
+
+      .validation-summary {
+        background-color: #e8f4ea;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 20px 0;
+        border-left: 4px solid #2c5530;
+      }
+
+      .columns-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+
+      .column-tag {
+        background-color: #f8f9fa;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        font-family: monospace;
+        font-size: 0.9em;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          padding: 15px;
+        }
+
+        .info-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>PXT Web App</h1>
+        <div class="subtitle">
+          Peatland eXchange Tags - Data Standardization Tool
+        </div>
+      </div>
+
+      <div id="messages"></div>
+
+      <!-- Upload Page -->
+      <div id="upload-page" class="page active">
+        <div class="upload-section">
+          <h2>Upload Your Peatland Data</h2>
+          <p>Select a CSV file containing your peatland research data</p>
+          <div class="file-input">
+            <label for="file-upload">📁 Choose CSV File</label>
+            <input type="file" id="file-upload" accept=".csv" />
+          </div>
+          <div id="selected-file" class="selected-file"></div>
+        </div>
+
+        <div class="info-section">
+          <h3>What are PXT Tags?</h3>
+          <p>
+            Peatland eXchange Tags (PXT) are standardized metadata tags
+            organized into three levels:
+          </p>
+          <ul style="margin: 10px 0; padding-left: 30px">
+            <li>
+              <strong>Site Level:</strong> Location and site characteristics
+              (#pxt_site_*)
+            </li>
+            <li>
+              <strong>Event Level:</strong> Observation and measurement details
+              (#pxt_event_*)
+            </li>
+            <li>
+              <strong>Dataset Level:</strong> Overall collection information
+              (#pxt_dataset_*)
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Preview Page -->
+      <div id="preview-page" class="page">
+        <h2>Data Preview</h2>
+        <div id="preview-content"></div>
+        <div class="actions">
+          <button
+            class="btn btn-secondary"
+            onclick="app.goToPage('upload-page')"
+          >
+            ← Upload Different File
+          </button>
+          <button
+            class="btn btn-primary"
+            onclick="app.goToPage('tagging-page')"
+          >
+            Apply PXT Tags →
+          </button>
+        </div>
+      </div>
+
+      <!-- Tagging Page -->
+      <div id="tagging-page" class="page">
+        <h2>Apply PXT Tags</h2>
+        <div id="tagging-content"></div>
+        <div class="actions">
+          <button
+            class="btn btn-secondary"
+            onclick="app.goToPage('preview-page')"
+          >
+            ← Back to Preview
+          </button>
+          <button class="btn btn-primary" onclick="app.saveTagsAndValidate()">
+            Continue to Validation →
+          </button>
+        </div>
+      </div>
+
+      <!-- Validation Page -->
+      <div id="validation-page" class="page">
+        <h2>Validation & Export</h2>
+        <div id="validation-content"></div>
+        <div class="actions">
+          <button
+            class="btn btn-secondary"
+            onclick="app.goToPage('tagging-page')"
+          >
+            ← Modify Tags
+          </button>
+          <button class="btn btn-success" onclick="app.exportCSV()">
+            📥 Download Tagged CSV
+          </button>
+          <button
+            class="btn btn-secondary"
+            onclick="app.goToPage('upload-page')"
+          >
+            Start New Upload
+          </button>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p>PXT Web App - Browser Version (Fully Offline)</p>
+        <p>All processing happens in your browser - no data is stored</p>
+      </div>
+    </div>
+
+    <script>
+      // Simple CSV Parser
+      function parseCSV(text) {
+        const lines = text.split(/\r\n|\n|\r/).filter((line) => line.trim());
+        if (lines.length === 0) return { headers: [], data: [] };
+
+        const headers = parseCSVLine(lines[0]);
+        const data = [];
+
+        for (let i = 1; i < lines.length; i++) {
+          const values = parseCSVLine(lines[i]);
+          const row = {};
+          headers.forEach((header, idx) => {
+            let value = values[idx] || "";
+            // Try to convert to number
+            if (value !== "" && !isNaN(value)) {
+              value = parseFloat(value);
+            }
+            row[header] = value;
+          });
+          data.push(row);
+        }
+
+        return { headers, data };
+      }
+
+      function parseCSVLine(line) {
+        const result = [];
+        let current = "";
+        let inQuotes = false;
+
+        for (let i = 0; i < line.length; i++) {
+          const char = line[i];
+          const next = line[i + 1];
+
+          if (char === '"') {
+            if (inQuotes && next === '"') {
+              current += '"';
+              i++;
+            } else {
+              inQuotes = !inQuotes;
+            }
+          } else if (char === "," && !inQuotes) {
+            result.push(current.trim());
+            current = "";
+          } else {
+            current += char;
+          }
+        }
+        result.push(current.trim());
+        return result;
+      }
+
+      function toCSV(headers, data) {
+        let csv = headers.map(escapeCSV).join(",") + "\n";
+        data.forEach((row) => {
+          const values = headers.map((h) => escapeCSV(row[h]));
+          csv += values.join(",") + "\n";
+        });
+        return csv;
+      }
+
+      function escapeCSV(value) {
+        if (value === null || value === undefined) return "";
+        const str = String(value);
+        if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+          return '"' + str.replace(/"/g, '""') + '"';
+        }
+        return str;
+      }
+
+      // PXT Tags - Complete specification from pxt_tags.py
+      const PXT_TAGS = [
+        // Site Level - Required (6 tags)
+        {
+          tag: "#pxt_site_id",
+          field: "siteID",
+          priority: "required",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_lat",
+          field: "latitude",
+          priority: "required",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_lon",
+          field: "longitude",
+          priority: "required",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_datum",
+          field: "geodeticDatum",
+          priority: "required",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_type",
+          field: "peatlandType",
+          priority: "required",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_subtype",
+          field: "peatlandSubtype",
+          priority: "required",
+          level: "site",
+        },
+
+        // Site Level - Desirable (11 tags)
+        {
+          tag: "#pxt_site_uncertainty",
+          field: "coordinateUncertainty",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_elevation",
+          field: "elevation",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_vegetation",
+          field: "dominantVegetation",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_management",
+          field: "managementStatus",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_condition",
+          field: "siteCondition",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_remarks",
+          field: "siteRemarks",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_established",
+          field: "siteEstablishedDate",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_establishedby",
+          field: "siteEstablishedBy",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_access",
+          field: "siteAccessNotes",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_owner",
+          field: "landOwner",
+          priority: "desirable",
+          level: "site",
+        },
+        {
+          tag: "#pxt_site_permissions",
+          field: "permissionsRequired",
+          priority: "desirable",
+          level: "site",
+        },
+
+        // Site Level - Optional (1 tag)
+        {
+          tag: "#pxt_site_gridref",
+          field: "nationalGridReference",
+          priority: "optional",
+          level: "site",
+        },
+
+        // Event Level - Required (4 tags)
+        {
+          tag: "#pxt_event_id",
+          field: "eventID",
+          priority: "required",
+          level: "event",
+        },
+        {
+          tag: "#pxt_event_site_id",
+          field: "siteID",
+          priority: "required",
+          level: "event",
+        },
+        {
+          tag: "#pxt_event_date",
+          field: "eventDate",
+          priority: "required",
+          level: "event",
+        },
+        {
+          tag: "#pxt_recorded_by",
+          field: "recordedBy",
+          priority: "required",
+          level: "event",
+        },
+
+        // Event Level - Desirable (12 tags)
+        {
+          tag: "#pxt_parent_event_id",
+          field: "parentEventID",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_event_time",
+          field: "eventTime",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_event_date_precision",
+          field: "eventDatePrecision",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_field_number",
+          field: "fieldNumber",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_recorded_by_id",
+          field: "recordedByID",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_sampling_effort",
+          field: "samplingEffort",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_weather",
+          field: "weatherConditions",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_temperature",
+          field: "temperature",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_equipment",
+          field: "equipmentUsed",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_instrument_model",
+          field: "instrumentModel",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_event_remarks",
+          field: "eventRemarks",
+          priority: "desirable",
+          level: "event",
+        },
+        {
+          tag: "#pxt_quality_notes",
+          field: "eventQualityNotes",
+          priority: "desirable",
+          level: "event",
+        },
+
+        // Dataset Level - Required (20 tags)
+        {
+          tag: "#pxt_dataset_id",
+          field: "datasetID",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_title",
+          field: "title",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_description",
+          field: "description",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_abstract",
+          field: "abstract",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_keywords",
+          field: "keywords",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_language",
+          field: "language",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_license",
+          field: "license",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_rights",
+          field: "rights",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_publisher",
+          field: "publisher",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_contact_name",
+          field: "contactName",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_contact_email",
+          field: "contactEmail",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_contact_org",
+          field: "contactOrganisation",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_geographic",
+          field: "geographicCoverage",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_temporal",
+          field: "temporalCoverage",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_data_type",
+          field: "dataType",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_peatland_type",
+          field: "peatlandType",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_measurements",
+          field: "measurementTypes",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_methodology",
+          field: "methodology",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_pi",
+          field: "principalInvestigator",
+          priority: "required",
+          level: "dataset",
+        },
+        {
+          tag: "#pxt_dataset_qa",
+          field: "qualityAssurance",
+          priority: "required",
+          level: "dataset",
+        },
+
+        // Dataset Level - Desirable (1 tag)
+        {
+          tag: "#pxt_dataset_funding",
+          field: "fundingSource",
+          priority: "desirable",
+          level: "dataset",
+        },
+      ];
+
+      // Auto-suggest function
+      function suggestTag(columnName) {
+        const patterns = {
+          "#pxt_site_id": ["site_id", "siteid", "site_name", "site"],
+          "#pxt_site_lat": ["latitude", "lat"],
+          "#pxt_site_lon": ["longitude", "lon", "lng", "long"],
+          "#pxt_site_elevation": ["elevation", "altitude", "height"],
+          "#pxt_event_date": ["date", "study_date", "sample_date"],
+          "#pxt_recorded_by": ["recorded_by", "observer"],
+          "#pxt_weather": ["weather", "conditions"],
+          "#pxt_temperature": ["temperature", "temp"],
+        };
+
+        const colLower = columnName.toLowerCase().replace(/[_\s]/g, "");
+        for (const [tag, keywords] of Object.entries(patterns)) {
+          for (const kw of keywords) {
+            if (colLower.includes(kw.replace(/[_\s]/g, ""))) {
+              return tag;
+            }
+          }
+        }
+        return null;
+      }
+
+      // Main App
+      const app = {
+        state: {
+          filename: "",
+          headers: [],
+          data: [],
+          mappings: {},
+        },
+
+        showMessage(msg, type = "success") {
+          const messages = document.getElementById("messages");
+          messages.innerHTML = `<div class="message ${type}">${msg}</div>`;
+          setTimeout(() => (messages.innerHTML = ""), 5000);
+        },
+
+        goToPage(pageId) {
+          document
+            .querySelectorAll(".page")
+            .forEach((p) => p.classList.remove("active"));
+          document.getElementById(pageId).classList.add("active");
+
+          if (pageId === "tagging-page") {
+            this.showTagging();
+          }
+        },
+
+        handleFileUpload(file) {
+          if (!file) return;
+
+          this.state.filename = file.name;
+          document.getElementById("selected-file").style.display = "block";
+          document.getElementById("selected-file").textContent =
+            `Selected: ${file.name}`;
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            try {
+              const result = parseCSV(e.target.result);
+              if (result.data.length === 0) {
+                this.showMessage("CSV file is empty", "error");
+                return;
+              }
+
+              this.state.headers = result.headers;
+              this.state.data = result.data;
+              this.showPreview();
+              this.goToPage("preview-page");
+              this.showMessage(
+                `Loaded ${file.name} with ${result.data.length} rows`,
+              );
+            } catch (error) {
+              this.showMessage("Error: " + error.message, "error");
+            }
+          };
+          reader.readAsText(file);
+        },
+
+        showPreview() {
+          const content = document.getElementById("preview-content");
+          let html = `
+                    <div class="info-section">
+                        <h3>📊 File Information</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="number">${this.state.data.length}</div>
+                                <div class="label">Rows</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="number">${this.state.headers.length}</div>
+                                <div class="label">Columns</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3>📋 Columns</h3>
+                    <div class="columns-list">
+                `;
+
+          this.state.headers.forEach((col) => {
+            html += `<div class="column-tag">${col}</div>`;
+          });
+
+          html +=
+            '</div><h3>👁️ Preview (First 3 Rows)</h3><div class="data-table"><table><thead><tr>';
+
+          this.state.headers.forEach((h) => (html += `<th>${h}</th>`));
+          html += "</tr></thead><tbody>";
+
+          this.state.data.slice(0, 3).forEach((row) => {
+            html += "<tr>";
+            this.state.headers.forEach((h) => {
+              const val = row[h] !== null && row[h] !== undefined ? row[h] : "";
+              html += `<td title="${val}">${val}</td>`;
+            });
+            html += "</tr>";
+          });
+
+          html += "</tbody></table></div>";
+          content.innerHTML = html;
+        },
+
+        showTagging() {
+          const content = document.getElementById("tagging-content");
+          let html = `
+                    <div class="info-section">
+                        <h3>🏷️ Column to PXT Tag Mapping</h3>
+                        <p>Map your ${this.state.headers.length} columns to standardized PXT tags</p>
+                    </div>
+                `;
+
+          this.state.headers.forEach((col) => {
+            const suggestion = suggestTag(col);
+            const suggested = suggestion ? "suggested" : "";
+            const samples = this.state.data
+              .slice(0, 2)
+              .map((r) => r[col])
+              .filter((v) => v);
+
+            html += `<div class="column-mapping ${suggested}">
+                        <div class="column-header">
+                            <span class="column-name">${col}</span>
+                            ${suggestion ? '<span class="suggestion-badge">✨ Suggested</span>' : ""}
+                        </div>
+                        <select class="tag-dropdown" data-column="${col}">
+                            <option value="">-- No tag --</option>`;
+
+            PXT_TAGS.forEach((tag) => {
+              const sel = tag.tag === suggestion ? "selected" : "";
+              html += `<option value="${tag.tag}" ${sel}>${tag.tag} - ${tag.field} (${tag.priority})</option>`;
+            });
+
+            html += "</select>";
+            if (samples.length) {
+              html += `<div class="sample-data">Sample: ${samples.join(", ")}</div>`;
+            }
+            html += "</div>";
+          });
+
+          content.innerHTML = html;
+        },
+
+        saveTagsAndValidate() {
+          const dropdowns = document.querySelectorAll(".tag-dropdown");
+          this.state.mappings = {};
+          dropdowns.forEach((dd) => {
+            this.state.mappings[dd.dataset.column] = dd.value;
+          });
+          this.showValidation();
+          this.goToPage("validation-page");
+          this.showMessage("Tags saved!");
+        },
+
+        showValidation() {
+          const mapped = Object.values(this.state.mappings).filter(
+            (v) => v,
+          ).length;
+          const total = this.state.headers.length;
+          const pct = total > 0 ? Math.round((mapped / total) * 100) : 0;
+
+          const tagInfo = {};
+          PXT_TAGS.forEach((t) => (tagInfo[t.tag] = t));
+
+          let req = 0,
+            des = 0;
+          Object.values(this.state.mappings).forEach((tag) => {
+            if (tag && tagInfo[tag]) {
+              if (tagInfo[tag].priority === "required") req++;
+              else if (tagInfo[tag].priority === "desirable") des++;
+            }
+          });
+
+          let html = `
+                    <div class="validation-summary">
+                        <h3>📊 Validation Summary</h3>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="number">${mapped} / ${total}</div>
+                                <div class="label">Tagged</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="number">${pct}%</div>
+                                <div class="label">Coverage</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="number">${req}</div>
+                                <div class="label">Required</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="number">${des}</div>
+                                <div class="label">Desirable</div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3>🏷️ Mappings</h3>
+                    <div class="data-table"><table><thead><tr>
+                        <th>Column</th><th>PXT Tag</th><th>Priority</th>
+                    </tr></thead><tbody>
+                `;
+
+          this.state.headers.forEach((col) => {
+            const tag = this.state.mappings[col] || "";
+            const info = tag ? tagInfo[tag] : null;
+            const display = tag || '<em style="color:#999">No tag</em>';
+            const priority = info
+              ? `<span class="tag-priority priority-${info.priority}">${info.priority.toUpperCase()}</span>`
+              : "-";
+            html += `<tr><td><code>${col}</code></td><td>${display}</td><td>${priority}</td></tr>`;
+          });
+
+          html += "</tbody></table></div>";
+          document.getElementById("validation-content").innerHTML = html;
+        },
+
+        exportCSV() {
+          try {
+            const pxtRow = {};
+            this.state.headers.forEach((h) => {
+              pxtRow[h] = this.state.mappings[h] || "";
+            });
+
+            const exportData = [pxtRow, ...this.state.data];
+            const csv = toCSV(this.state.headers, exportData);
+
+            const blob = new Blob([csv], { type: "text/csv" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = this.state.filename.replace(".csv", "_PXT_tagged.csv");
+            a.click();
+            URL.revokeObjectURL(url);
+
+            this.showMessage("CSV exported successfully!");
+          } catch (error) {
+            this.showMessage("Export error: " + error.message, "error");
+          }
+        },
+      };
+
+      // Initialize
+      document.getElementById("file-upload").addEventListener("change", (e) => {
+        app.handleFileUpload(e.target.files[0]);
+      });
+    </script>
+  </body>
+</html>
