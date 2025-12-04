@@ -1,4 +1,4 @@
-# PXT Web App - Peatland eXchange Tags
+# PXT Web App - Peatland eXchange Tags (Now archived)
 
 A web application for applying standardized metadata tags to peatland research data, inspired by HXL Proxy and designed specifically for the peatland research community.
 
